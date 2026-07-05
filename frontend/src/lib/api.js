@@ -14,7 +14,7 @@ const fastapi = (operation, url, params, success_callback, failure_callback) => 
         body = qs.stringify(params)
     }
 
-    let _url = import.meta.env.VITE_SERVER_URL + url
+    let _url = url.startsWith('/') ? url : '/' + url;
     
     // 🛠️ 수정 포인트 1: 'get'뿐만 아니라 'delete' 메서드도 주소창 파라미터(?key=value)를 사용하도록 변경
     if(method === 'get' || method === 'delete') {
