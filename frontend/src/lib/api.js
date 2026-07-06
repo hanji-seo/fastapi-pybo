@@ -3,6 +3,8 @@ import { access_token, username, is_login } from "./store"
 import { get } from "svelte/store"
 import { push } from "svelte-spa-router"
 
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || ''
+
 const fastapi = (operation, url, params, success_callback, failure_callback) => {
     let method = operation.toLowerCase() // 대소문자 방지
     let content_type = 'application/json'
@@ -14,8 +16,8 @@ const fastapi = (operation, url, params, success_callback, failure_callback) => 
         body = qs.stringify(params)
     }
 
-    let _url = url.startsWith('/') ? url : '/' + url;
-    
+    let _url = SERVER_URL + (url.startsWith('/') ? url : '/' + url);
+
     // 🛠️ 수정 포인트 1: 'get'뿐만 아니라 'delete' 메서드도 주소창 파라미터(?key=value)를 사용하도록 변경
     if(method === 'get' || method === 'delete') {
         // 빈 객체({})가 들어오면 주소창 뒤에 무의미한 '?'가 붙지 않도록 방어 코드 작성
