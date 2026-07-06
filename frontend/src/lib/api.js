@@ -69,12 +69,13 @@ const fastapi = (operation, url, params, success_callback, failure_callback) => 
                         if (failure_callback) {
                             failure_callback(json)
                         } else {
-                            alert(JSON.stringify(json))
+                            alert(json.detail || JSON.stringify(json))
                         }
                     }
                 })
                 .catch(error => {
-                    alert(JSON.stringify(error))
+                   alert("서버 연결에 실패했습니다. (Network Error)")
+                console.error("상세 에러:", error)
                 })
         })
 }
