@@ -32,5 +32,9 @@ app.mount("/assets", StaticFiles(directory="frontend/dist/assets"))
 def index():
     return FileResponse("frontend/dist/index.html")
 
+@app.get("/{path:path}")
+def catch_all(path: str):
+    return FileResponse("frontend/dist/index.html")
+
 
 
