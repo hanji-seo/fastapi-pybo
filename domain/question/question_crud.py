@@ -1,42 +1,46 @@
 from datetime import datetime
-
 from domain.question.question_schema import QuestionCreate, QuestionUpdate
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from models import Question, User, Answer
 from sqlalchemy.orm import Session
 
 
 def get_question(db: Session, question_id: int):
-    question = db.query(Question).get(question_id)
-    return question
+    return db.query(Question).get(question_id)
 
 
 def get_question_list(db: Session, skip: int = 0, limit: int = 10, keyword: str = ''):
-    question_list = db.query(Question)
+    # 1. 기본 쿼리 시작
+    question_list = db.query(Question).outerjoin(User)
 
-    # 🛠️ 수정: keyword가 있을 때만 검색 로직을 적용하도록 변경
+    # 2. 검색어가 있을 경우
     if keyword:
         search = '%%{}%%'.format(keyword)
-        sub_query = db.query(Answer.question_id, Answer.content, User.username) \
-            .outerjoin(User, and_(Answer.user_id == User.id)).subquery()
+        # subquery를 사용하지 않고 조인만으로 해결하도록 단순화
+        sub_query = db.query(Answer.question_id, Answer.content, User.username.label('answer_username')) \
+            .outerjoin(User, Answer.user_id == User.id).subquery()
 
         question_list = question_list \
-            .outerjoin(User) \
-            .outerjoin(sub_query, and_(sub_query.c.question_id == Question.id)) \
+            .outerjoin(sub_query, sub_query.c.question_id == Question.id) \
             .filter(
-            Question.subject.ilike(search) |  # 질문제목
-            Question.content.ilike(search) |  # 질문내용
-            User.username.ilike(search) |  # 질문작성자
-            sub_query.c.content.ilike(search) |  # 답변내용
-            sub_query.c.username.ilike(search)  # 답변작성자
+            or_(
+                Question.subject.ilike(search),
+                Question.content.ilike(search),
+                User.username.ilike(search),
+                sub_query.c.content.ilike(search),
+                sub_query.c.answer_username.ilike(search)
+            )
         )
 
+    # 3. 결과 집계 및 페이징
     total = question_list.distinct().count()
     question_list = question_list.order_by(Question.create_date.desc()) \
         .offset(skip).limit(limit).distinct().all()
+
     return total, question_list
 
 
+# 나머지 함수는 동일하게 유지
 def create_question(db: Session, question_create: QuestionCreate, user: User):
     db_question = Question(subject=question_create.subject,
                            content=question_create.content,
@@ -46,8 +50,7 @@ def create_question(db: Session, question_create: QuestionCreate, user: User):
     db.commit()
 
 
-def update_question(db: Session, db_question: Question,
-                    question_update: QuestionUpdate):
+def update_question(db: Session, db_question: Question, question_update: QuestionUpdate):
     db_question.subject = question_update.subject
     db_question.content = question_update.content
     db_question.modify_date = datetime.now()
