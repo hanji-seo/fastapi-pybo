@@ -10,14 +10,13 @@ from domain.user import user_router
 app = FastAPI()
 
 origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173"
+    "https://pybo.co.kr"
 
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["https://pybo.co.kr"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,9 +31,6 @@ app.mount("/assets", StaticFiles(directory="frontend/dist/assets"))
 def index():
     return FileResponse("frontend/dist/index.html")
 
-@app.get("/{path:path}")
-def catch_all(path: str):
-    return FileResponse("frontend/dist/index.html")
 
 
 
